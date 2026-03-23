@@ -19,3 +19,18 @@ jobs:
 
       - name: Push Docker image
         run: docker push ${{ secrets.DOCKER_USERNAME }}/myapp:latest
+
+        # 4️⃣ 更新 GitOps 仓库
+      - name: Update Kubernetes repo
+        run: |
+          git clone https://${{ secrets.GIT_TOKEN }}@github.com/${{ secrets.DOCKER_USERNAME }}/myapp-k8s.git
+          cd myapp-k8s
+
+          # 修改 deployment.yaml 里的 image
+          sed -i "s|image: .*|image: ${{ secrets.DOCKER_USERNAME }}/myapp:${{ github.sha }}|g" deployment.yaml
+
+          git config user.name "github-actions"
+          git config user.email "actions@github.com"
+
+          git commit -am "Update image to ${{ github.sha }}"
+          git push
